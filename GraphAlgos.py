@@ -9,12 +9,12 @@ from graphUtils import *
 # Scrolls the graph breadth first, with a queue :
 # each iteration, takes the first node of the queue,
 # and adds its unchecked neighs to the queue.
-# Condition : Every edge has the same cost, else see Dijkstra.
+# Condition : Every edge has the same cost, else see Topo_DAG.
 # adjList :     list[list[tuple(int, int)]] adjacence list of the graph
 # start :       int starting node index
 # returns : list[int], predecessor list : for every node, the node before it when coming from start node
 # alternatively : list[int], distance list : for every node, the distances between the start node and it
-# O(n)
+# O(n + p)
 def BFS(adjList, start) :
     nNodes = len(adjList)
     nodesColor = [0 for i in range(nNodes)] # 0 if currently unchecked, 1 if done
@@ -46,11 +46,15 @@ def BFS(adjList, start) :
 # adjList :     list[list[tuple(int, int)]] adjacence list of the graph
 # start :       int starting node index
 # returns : list[int], predecessor list : for every node, the node before it when coming from start node
-# O(n)
+# alternatively : list[int], topological numerotation list :
+#                 for every rank, the corresponding node according to topological sorting
+# O(n + p)
 def DFS(adjList, start) :
     nNodes = len(adjList)
     nodesColor = [0 for i in range(nNodes)] # 0 if currently unchecked, 1 if done
     pred = [-1 for i in range(nNodes)]
+    topoNum = [-1 for i in range(nNodes)]
+    curTopoNum = 0
     grayQ = deque([start])
 
     while grayQ :
@@ -60,13 +64,41 @@ def DFS(adjList, start) :
                 grayQ.append(neigh[0])
                 pred[neigh[0]] = curNode
         nodesColor[curNode] = 1
+        topoNum[curTopoNum] = curNode
+        curTopoNum += 1
 
         # you may add current node processing here
         #print(curNode)
 
     return pred
+    # return topoNum
 
-# Topo_DAG
+# Scrolls the graph in the topological sorting order.
+# Condition : The graph is a DAG (Directed Acyclic Graph), else see Dijkstra.
+# adjList :     list[list[tuple(int, int)]] adjacence list of the graph
+# start :       int starting node index
+# returns : list[int], predecessor list : for every node, the node before it when coming from start node
+# alternatively : list[int], distance list : for every node, the distances between the start node and it
+# O(n + p)
+def Topo_DAG(adjList, start) :
+    topoNum = DFS(adjList, start) # get topological sorting
+    nNodes = len(adjList)
+    pred = [-1 for i in range(nNodes)]
+    distances = [-1 for i in range(nNodes)]
+    distances[start] = 0
+
+    for n in range(nNodes) :
+        for neigh in adjList[topoNum[n]] :
+            if distances[topoNum[n]] + neigh[1] < distances[neigh[0]] or distances[neigh[0]] == -1 :
+                distances[neigh[0]] = distances[topoNum[n]] + neigh[1]
+                pred[neigh[0]] = topoNum[n]
+
+        # you may add current node processing here
+        #print(curNode)
+
+    return pred
+    # return distances
+
 
 # Scrolls the graph breadth first, with a priority queue, according to the distance between start and current node :
 # each iteration, takes the first node of the queue,
@@ -111,17 +143,20 @@ def Dijkstra(adjList, start) :
     # return distances
 
 # A* ?
+# Variable complexity
 
-# Bellmann_Ford
+# Bellman_Ford
+# O(n * p)
 
 # Floyd-Warshall
+# O(n^3)
 
 # Calculates the Min Span Tree.
 # Condition : None ?
 # adjList :     list[list[tuple(int, int)]] adjacence list of the graph
 # start :       int starting node index
 # returns : list[tuple(int, int, int)], list of all edges (indexNodeA, indexNodeB, edgeCost) of the Min Span Tree
-# O(n*log(p))
+# O(n * log(p))
 def Kruskal(nNodes, edgeList):
     treeList = [[i] for i in range(nNodes)]
     treeEdges = [[] for i in range(nNodes)]
@@ -197,6 +232,7 @@ def Kruskal(nNodes, edgeList):
 # print(DFS(adjList, start))
 # --- results :
 # --- pred = [-1, 0, 1, 0, 0, 2, 5, 2, 4, 4, 9, 0, 11, 0, 6, 0, 2, 16]
+# --- topoNum = [0, 1, 2, 5, 6, 14, 7, 16, 17, 3, 4, 8, 9, 10, 11, 12, 13, 15]
 
 # nNodes = 18
 # edgesList = [[0, 1, 3], [1, 2, 5], [0, 3, 2], [0, 4, 4], [4, 3, 7], [2, 5, 10], [5, 6, 11], [2, 7, 1], [4, 8, 7], [4, 9, 4], [9, 10, 5], [0, 11, 5], [11, 12, 5], [0, 13, 8], [6, 14, 16], [0, 15, 11], [2, 16, 2], [16, 17, 6]]
@@ -205,7 +241,18 @@ def Kruskal(nNodes, edgeList):
 # print(DFS(adjList, start))
 # --- results :
 # --- pred = [-1, 0, 1, 0, 0, 2, 5, 2, 4, 4, 9, 0, 11, 0, 6, 0, 2, 16]
+# --- topoNum = [0, 1, 2, 9, 10, 3, 4, 6, 11, 12, 13, 14, 15, 16, 5, 17, 7, 8]
 # --- We expect the same as the previous test, since edge weight has no influence on DFS
+
+
+# nNodes = 18
+# edgesList = [[0, 1, 3], [1, 2, 5], [0, 3, 2], [0, 4, 4], [4, 3, 7], [2, 5, 10], [5, 6, 11], [2, 7, 1], [4, 8, 7], [4, 9, 4], [9, 10, 5], [0, 11, 5], [11, 12, 5], [0, 13, 8], [6, 14, 16], [0, 15, 11], [2, 16, 2], [16, 17, 6]]
+# start = 0
+# adjList = edgeListToAdjListWithCost(edgesList, nNodes)
+# print(Topo_DAG(adjList, start))
+# --- results :
+# --- pred = [-1, 0, 1, 0, 0, 2, 5, 2, 4, 4, 9, 0, 11, 0, 6, 0, 2, 16]
+# --- distances = [0, 3, 8, 2, 4, 18, 29, 9, 11, 8, 13, 5, 10, 8, 45, 11, 10, 16]
 
 
 # nNodes = 10
